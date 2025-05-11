@@ -1,0 +1,22 @@
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.authRouter = void 0;
+const express_1 = require("express");
+const express_async_handler_1 = __importDefault(require("express-async-handler"));
+const controllers_1 = require("../controllers");
+const middlewares_1 = require("../middlewares");
+const router = (0, express_1.Router)();
+exports.authRouter = router;
+// router.post('/google/callback', asyncHandler(authCtrl.handleGoogleCallback));
+router.post('/register', (0, middlewares_1.multerMiddleHost)({}).array("image", 3), (0, express_async_handler_1.default)(controllers_1.authCtrl.register));
+router.get('/verify-email', (0, express_async_handler_1.default)(controllers_1.authCtrl.verifyEmail));
+router.post('/login', (0, express_async_handler_1.default)(controllers_1.authCtrl.login));
+router.post('/logout', middlewares_1.isAuthunticated, (0, express_async_handler_1.default)(controllers_1.authCtrl.logout));
+router.post('/refresh-token', (0, express_async_handler_1.default)(controllers_1.authCtrl.refreshToken));
+router.post('/verify-otp', (0, express_async_handler_1.default)(controllers_1.authCtrl.verifyOtp));
+router.post('/reset-password', (0, express_async_handler_1.default)(controllers_1.authCtrl.resetPassword));
+router.post('/resend-verify-email', middlewares_1.oneMinuteLimiter, middlewares_1.twentyFourHourLimiter, (0, express_async_handler_1.default)(controllers_1.authCtrl.resendVerificationEmail));
+router.post('/forgot-password', middlewares_1.oneMinuteLimiter, middlewares_1.twentyFourHourLimiter, (0, express_async_handler_1.default)(controllers_1.authCtrl.forgotPassword));

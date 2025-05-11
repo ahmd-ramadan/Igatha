@@ -1,0 +1,5 @@
+export * as authCtrl from './auth.controller'
+export * as userCtrl from './user.controller'
+export * as campaignCtrl from './campaign.controller'
+export * as requestCtrl from './request.controller'
+export * as kitchenCtrl from './kitchen.controller'
