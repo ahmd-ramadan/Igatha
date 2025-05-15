@@ -54,7 +54,7 @@ class AuthService {
     }
 
     async generateAndStoreTokens(user: IUser) {
-        const { _id: userId, role } = user;
+        const { _id: userId, role, status } = user;
         const tokens = JwtService.generateTokens(user);
         await tokenService.createOne({
             token: tokens.refreshToken,
@@ -70,9 +70,9 @@ class AuthService {
     }
 
     async sendVerificationEmail(user: IUser) {
-        const { _id: userId, role } = user;
+        const { _id: userId, role, status } = user;
         const verificationToken = JwtService.generateAccessToken(
-          { userId, role },
+          { userId, role, status },
           24 * 60 * 60,
         );
 
@@ -181,6 +181,7 @@ class AuthService {
     
             return { data: userResponse, tokens };
         } catch (error) {
+            console.log(error);
             if(error instanceof ApiError) {
                 throw error
             }

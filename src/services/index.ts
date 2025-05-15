@@ -10,4 +10,7 @@ export * from './cloudinary.service'
 export * from './campaign.service'
 export * from './request.service'
 export * from './kitchen.service'
+export * from './supplier.service'
+export * from './charity.service'
+export * from './product.service'
 

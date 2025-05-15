@@ -1,5 +1,4 @@
 import { RequiredMediaAsset } from "../types";
-import { ICloudinaryIMage } from "./cloudinary.interface";
 import { ICreateUserQuery, IUserModel } from "./user.interface";
 
 export interface IKitchenModel extends IUserModel {
@@ -7,6 +6,9 @@ export interface IKitchenModel extends IUserModel {
     workPermit: RequiredMediaAsset,
     address: string,
     rating: number,
+    sales: number,
+    totalBalance: number,
+    currentBalance: number,
 }
 
 export interface IKitchen extends IKitchenModel {}

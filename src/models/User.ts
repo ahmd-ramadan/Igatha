@@ -3,7 +3,7 @@ import { UserRolesEnum, UserStatusEnum } from '../enums';
 import { IUserModel } from '../interfaces';
 import { HashingService } from '../services';
 
-const UserSchema = new Schema({
+const userSchema = new Schema({
     name: {
         type: String,
         required: true,
@@ -37,7 +37,7 @@ const UserSchema = new Schema({
     },
     avatar: {
         secure_url: String,
-        path_id: String
+        public_id: String
     },
     rejectionReason: {
         type: String,
@@ -47,11 +47,4 @@ const UserSchema = new Schema({
     timestamps: true
 });
 
-UserSchema.pre('save', async function(next) {
-    if (this.isModified('password')) {
-        this.password = await HashingService.hash(this.password);
-    }
-    next();
-});
-
-export const User = model<IUserModel>('User', UserSchema);
+export const User = model<IUserModel>('User', userSchema);

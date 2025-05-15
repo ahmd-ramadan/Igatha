@@ -8,6 +8,7 @@ import { RequestTypeEnum, UserRolesEnum } from "../enums";
 import { requestService } from "./request.service";
 import { authService } from "./auth.service";
 import { RequiredMediaAsset } from "../types";
+import { HashingService } from "./hashing.service";
 
 class CampaignService {
 
@@ -23,7 +24,7 @@ class CampaignService {
 
     async createCampaign({ data, files }: { data: ICreateCampaignQuery, files: any }) {
         try {
-            const { email } = data;
+            const { email, password } = data;
             const isCampaignExist = await userService.isUserExistByEmail({ 
                 email, 
                 role: UserRolesEnum.CAMPAIGN 
@@ -34,6 +35,7 @@ class CampaignService {
 
             let newData: ICreateCampaignData = {
                 ... data,
+                password: await HashingService.hash(password),
                 commercialRegister: {} as RequiredMediaAsset,
                 hajjReference: {} as RequiredMediaAsset,
             }
@@ -259,6 +261,10 @@ class CampaignService {
 
             // Update campaign data
             const updatedCampaign = await this.campaignDataSource.updateOne({ _id: campaignId }, updatedData);
+            if (updatedData.avatar && currentCampaign?.avatar?.public_id) {
+                await cloudinaryService.deleteImage(currentCampaign.avatar.public_id)
+            }
+
 
             // Create update request instead of directly updating
             let request: IRequest | null = requestIsExist || null;
@@ -294,19 +300,19 @@ class CampaignService {
         const updatedCampaign = await this.campaignDataSource.updateOne({ _id: campaignId }, data)
 
         //! Delete cloudinary previous images
-        if (commercialRegister) {
-            if (commercialRegister.file) {
+        if (data?.commercialRegister) {
+            if (data.commercialRegister?.file && commercialRegister?.file?.public_id) {
                 await cloudinaryService.deleteImage(commercialRegister.file.public_id)
             }
-            if (commercialRegister.image) {
+            if (data.commercialRegister?.image && commercialRegister?.image?.public_id) {
                 await cloudinaryService.deleteImage(commercialRegister.image.public_id)
             }
         }
-        if (hajjReference) {
-            if (hajjReference.file) {
+        if (data?.hajjReference) {
+            if (data.hajjReference?.file && hajjReference?.file?.public_id) {
                 await cloudinaryService.deleteImage(hajjReference.file.public_id)
             }
-            if (hajjReference.image) {
+            if (data.hajjReference?.image && hajjReference?.image?.public_id) {
                 await cloudinaryService.deleteImage(hajjReference.image.public_id)
             }
         }

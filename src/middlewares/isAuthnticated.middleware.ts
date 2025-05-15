@@ -25,7 +25,7 @@ export const isAuthunticated = asyncHandler(
 
         const decoded = JwtService.verify(token, 'refresh');
 
-        req.user = { userId: decoded.userId as string, role: decoded.role };
+        req.user = { userId: decoded.userId as string, role: decoded.role, status: decoded.status };
         next();
     },
 );

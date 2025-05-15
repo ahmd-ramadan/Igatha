@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { kitchenCtrl } from '../controllers';
 import { isAuthorized, isAuthunticated, multerMiddleHost } from '../middlewares';
 import asyncHandler from 'express-async-handler'
-import { manageCampaign } from '../access';
+import { manageKitchen } from '../access';
 
 const router = Router();
 
@@ -19,7 +19,7 @@ router.route('/')
     )
     .patch(
         isAuthunticated,
-        isAuthorized(manageCampaign),
+        isAuthorized(manageKitchen),
         multerMiddleHost({}).fields([
             { name: "avatar", maxCount: 1 },
             { name: "commercialRegisterImage", maxCount: 1 },

@@ -30,6 +30,18 @@ const kitchenSchema = new Schema({
         type: Number,
         default: 0,
     },
+    sales: {
+        type: Number,
+        default: 0,
+    },
+    totalBalance: {
+        type: Number,
+        default: 0,
+    },
+    currentBalance: {
+        type: Number,
+        default: 0,
+    },
 });
 
 export const Kitchen = User.discriminator<IKitchenModel>('Kitchen', kitchenSchema);

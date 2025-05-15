@@ -7,6 +7,7 @@ import { campaignService } from "./campaign.service";
 import { cloudinaryService } from "./cloudinary.service";
 import { HashingService } from "./hashing.service";
 import { kitchenService } from "./kitchen.service";
+import { supplierService } from "./supplier.service";
 
 class UserService {
 
@@ -21,7 +22,7 @@ class UserService {
     }
 
     async isUserExistByEmail({ email, role }: { email: string, role: UserRolesEnum }) {
-        const isUserExist = await this.userDataSource.findOne({ email, role});
+        const isUserExist = await this.userDataSource.findOne({ email });
         return isUserExist ? true : false;
     }
 
@@ -43,9 +44,10 @@ class UserService {
         if (role === UserRolesEnum.KITCHEN) {
             return await kitchenService.updateOne({ kitchenId: userId, data })
         } 
-        // if (role === UserRolesEnum.SUPPLIER) {
-        //     return await supplierService.updateOne({ supplierId: userId, data })
-        // } if (role === UserRolesEnum.GUEST) { 
+        if (role === UserRolesEnum.SUPPLIER) {
+            return await supplierService.updateOne({ supplierId: userId, data })
+        }
+        // if (role === UserRolesEnum.GUEST) { 
         //     return await guestService.updateOne({ guestId: userId, data })
         // } if (role === UserRolesEnum.ADMIN) {
         //     return await adminService.updateOne({ adminId: userId, data })

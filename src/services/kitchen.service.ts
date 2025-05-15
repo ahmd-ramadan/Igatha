@@ -6,6 +6,7 @@ import { RequiredMediaAsset } from "../types";
 import { ApiError, BAD_REQUEST, CONFLICT, INTERNAL_SERVER_ERROR, NOT_FOUND } from "../utils";
 import { authService } from "./auth.service";
 import { cloudinaryService } from "./cloudinary.service";
+import { HashingService } from "./hashing.service";
 import { requestService } from "./request.service";
 import { userService } from "./user.service";
 
@@ -23,7 +24,7 @@ class KitchenService {
 
     async createKitchen({ data, files }: { data: ICreateKitchenQuery, files: any }) {
         try {
-            const { email } = data;
+            const { email, password } = data;
             const isKitchenExist = await userService.isUserExistByEmail({ 
                 email, 
                 role: UserRolesEnum.KITCHEN 
@@ -34,6 +35,7 @@ class KitchenService {
 
             let newData: ICreateKitchenData = {
                 ... data,
+                password: await HashingService.hash(password),
                 commercialRegister: {} as RequiredMediaAsset,
                 workPermit: {} as RequiredMediaAsset,
             }
@@ -252,7 +254,9 @@ class KitchenService {
 
             // Update kitchen data
             const updatedKitchen = await this.kitchenDataSource.updateOne({ _id: kitchenId }, updatedData);
-
+            if (updatedData.avatar && currentKitchen?.avatar?.public_id) {
+                await cloudinaryService.deleteImage(currentKitchen.avatar.public_id)
+            }
             // Create update request instead of directly updating
             let request: IRequest | null = requestIsExist || null;
             if (Object.keys(requestedUpdatedData).length > 0) {
@@ -287,19 +291,19 @@ class KitchenService {
         const updatedKitchen = await this.kitchenDataSource.updateOne({ _id: kitchenId }, data)
 
         //! Delete cloudinary previous images
-        if (commercialRegister) {
-            if (commercialRegister.file) {
+        if (data?.commercialRegister) {
+            if (data.commercialRegister?.file && commercialRegister?.file?.public_id) {
                 await cloudinaryService.deleteImage(commercialRegister.file.public_id)
             }
-            if (commercialRegister.image) {
+            if (data.commercialRegister?.image && commercialRegister?.image?.public_id) {
                 await cloudinaryService.deleteImage(commercialRegister.image.public_id)
             }
         }
-        if (workPermit) {
-            if (workPermit.file) {
+        if (data?.workPermit) {
+            if (data.workPermit?.file && workPermit?.file?.public_id) {
                 await cloudinaryService.deleteImage(workPermit.file.public_id)
             }
-            if (workPermit.image) {
+            if (data.workPermit?.image && workPermit?.image?.public_id) {
                 await cloudinaryService.deleteImage(workPermit.image.public_id)
             }
         }

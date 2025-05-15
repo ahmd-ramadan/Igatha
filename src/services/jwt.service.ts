@@ -29,8 +29,8 @@ export class JwtService {
     }
 
     static generateTokens(user: IUser) {
-        const { _id: userId, role } = user;
-        const payload: IJwtPayload = { userId, role };
+        const { _id: userId, role, status } = user;
+        const payload: IJwtPayload = { userId, role, status };
 
         const accessToken = this.generateAccessToken(payload);
         const refreshToken = this.generateRefreshToken(payload);
