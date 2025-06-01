@@ -30,6 +30,7 @@ exports.isAuthunticated = (0, express_async_handler_1.default)((req, _res, next)
     //   throw new ApiError('Session expired, please log in again', UNAUTHORIZED);
     // }
     const decoded = services_1.JwtService.verify(token, 'refresh');
-    req.user = { userId: decoded.userId, role: decoded.role };
+    const user = yield services_1.userService.findUserById(decoded.userId);
+    req.user = { userId: decoded.userId, role: decoded.role, status: (user === null || user === void 0 ? void 0 : user.status) || decoded.status };
     next();
 }));

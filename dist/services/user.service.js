@@ -18,6 +18,7 @@ const campaign_service_1 = require("./campaign.service");
 const cloudinary_service_1 = require("./cloudinary.service");
 const hashing_service_1 = require("./hashing.service");
 const kitchen_service_1 = require("./kitchen.service");
+const supplier_service_1 = require("./supplier.service");
 class UserService {
     constructor(userDataSource = repositories_1.userRepository) {
         this.userDataSource = userDataSource;
@@ -33,7 +34,7 @@ class UserService {
     }
     isUserExistByEmail(_a) {
         return __awaiter(this, arguments, void 0, function* ({ email, role }) {
-            const isUserExist = yield this.userDataSource.findOne({ email, role });
+            const isUserExist = yield this.userDataSource.findOne({ email });
             return isUserExist ? true : false;
         });
     }
@@ -58,9 +59,10 @@ class UserService {
             if (role === enums_1.UserRolesEnum.KITCHEN) {
                 return yield kitchen_service_1.kitchenService.updateOne({ kitchenId: userId, data });
             }
-            // if (role === UserRolesEnum.SUPPLIER) {
-            //     return await supplierService.updateOne({ supplierId: userId, data })
-            // } if (role === UserRolesEnum.GUEST) { 
+            if (role === enums_1.UserRolesEnum.SUPPLIER) {
+                return yield supplier_service_1.supplierService.updateOne({ supplierId: userId, data });
+            }
+            // if (role === UserRolesEnum.GUEST) { 
             //     return await guestService.updateOne({ guestId: userId, data })
             // } if (role === UserRolesEnum.ADMIN) {
             //     return await adminService.updateOne({ adminId: userId, data })

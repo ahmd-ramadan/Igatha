@@ -8,7 +8,7 @@ export const createProductSchema = z.object({
     discount: z.coerce.number().min(0).max(100).optional(),
     // images: z.array(imageSchema),
     stock: z.coerce.number().min(1),
-    minimumQuantity: z.coerce.number().min(1)
+    minimumOrderQuantity: z.coerce.number().min(1)
 });
 
 export const updateProductSchema = z.object({
@@ -16,13 +16,26 @@ export const updateProductSchema = z.object({
     desc: z.string().min(5).optional(),
     price: z.coerce.number().min(1).optional(),
     discount: z.coerce.number().min(0).max(100).optional(),
-    // images: z.array(imageSchema).optional(),
     stock: z.coerce.number().min(1).optional(),
-    minimumQuantity: z.coerce.number().min(1).optional()
+    minimumOrderQuantity: z.coerce.number().min(1).optional(),
+    updatedImagesIds: z.union([z.string(), z.array(z.string())])
+        .transform(ids => {
+            if (typeof ids === 'string') {
+                return [ids];
+            }
+            return ids;
+        }).optional(),
+    deletedImagesIds: z.union([z.string(), z.array(z.string())])
+        .transform(ids => {
+            if (typeof ids === 'string') {
+                return [ids];
+            }
+            return ids;
+        }).optional()
 });
 
 export const adminAddNoteOnProductSchema = z.object({
-    adminNote: z.string()
+    note: z.string()
 })
 
 export  const getAllProductsSchema = z.object({
@@ -35,5 +48,3 @@ export  const getAllProductsSchema = z.object({
     toPrice: z.coerce.number().optional(),
     search: z.string().optional() 
 })
-
-

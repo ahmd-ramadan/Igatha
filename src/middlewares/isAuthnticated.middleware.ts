@@ -1,8 +1,8 @@
 import { NextFunction, Request, Response } from 'express';
 import asyncHandler from 'express-async-handler';
-import { JwtService } from '../services';
+import { JwtService, userService } from '../services';
 import { ApiError, UNAUTHORIZED } from '../utils';
-import { AuthenticatedRequest } from '../interfaces';
+import { AuthenticatedRequest, IJwtPayload, IUser } from '../interfaces';
 
 export const isAuthunticated = asyncHandler(
     async (req: AuthenticatedRequest, _res: Response, next: NextFunction) => {
@@ -23,9 +23,10 @@ export const isAuthunticated = asyncHandler(
         //   throw new ApiError('Session expired, please log in again', UNAUTHORIZED);
         // }
 
-        const decoded = JwtService.verify(token, 'refresh');
+        const decoded = JwtService.verify(token, 'refresh') as IJwtPayload;
+        const user = await userService.findUserById(decoded.userId as string) as IUser;
 
-        req.user = { userId: decoded.userId as string, role: decoded.role, status: decoded.status };
+        req.user = { userId: decoded.userId as string, role: decoded.role, status: user?.status || decoded.status };
         next();
     },
 );

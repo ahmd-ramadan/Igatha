@@ -29,6 +29,10 @@ const productSchema = new Schema({
         type: Number, 
         required: false 
     },
+    appliedPrice: {
+        type: Number,
+        required: true
+    },
     images: [
         {
             secure_url: {
@@ -61,15 +65,34 @@ const productSchema = new Schema({
         type: Number,
         reqired: true
     },
-    minimumQuantity: {
+    minimumOrderQuantity: {
         type: Number,
         required: true
+    },
+    saleCounter: {
+        type: Number,
+        default: 0
     }
 }, {
     timestamps: true,
-    versionKey: false  
+    versionKey: false,
+    toObject: { virtuals: true },
+    toJSON: { virtuals: true }
 });
 
+productSchema.pre('save', function(next) {
+    this.appliedPrice = this.price - (this.price * (this.discount || 0) / 100);
+    next();
+});
 
+productSchema.virtual('supplierData', {
+    ref: 'Supplier',
+    localField: 'supplierId',
+    foreignField: '_id',
+    justOne: true,
+    options: { 
+        select: 'name avatar role rating'
+    }  
+});
 
 export const Product = model<IProductModel>("Product", productSchema);

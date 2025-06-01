@@ -91,24 +91,18 @@ export default class GeneralRepository<T, Response = T> {
     async findWithPopulate(
         query: FilterQuery<T>,
         populate: PopulateType,
-        options?: { skip?: number; limit?: number }
+        options?: { skip?: number; limit?: number; sort?: Record<string, 1 | -1> }
     ): Promise<Response[]> {
         let dbQuery = this.dbClient.find(query);
-        if (options?.skip) dbQuery = dbQuery.skip(options.skip);
-        if (options?.limit) dbQuery = dbQuery.limit(options.limit);
     
-        const nonPopulatedResponse = await this.populateHelper<Response[]>(dbQuery, populate) as Response[];
-        let populatedResponse: Response[] = [];
-        for(const r of nonPopulatedResponse) {
-            if (r) {
-                const response = await this.findOneWithPopulate(r, populate);
-                if (response) {
-                    populatedResponse.push(response);
-                }
-            }
-        }
-        return populatedResponse as Response[];
+        if (options?.skip !== undefined) dbQuery = dbQuery.skip(options.skip);
+        if (options?.limit !== undefined) dbQuery = dbQuery.limit(options.limit);
+        if (options?.sort !== undefined) dbQuery = dbQuery.sort(options.sort);
+    
+        const populatedResponse = await this.populateHelper<Response[]>(dbQuery, populate);
+        return populatedResponse ?? [];
     }
+    
       
 
     async findById(objectId: string): Promise<T | null> {

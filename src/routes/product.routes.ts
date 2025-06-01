@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { productCtrl } from '../controllers';
 import { isAuthorized, isAuthunticated, multerMiddleHost } from '../middlewares';
 import asyncHandler from 'express-async-handler'
-import { manageProduct } from '../access';
+import { accessOnProduct, manageProduct } from '../access';
 
 const router = Router();
 
@@ -21,13 +21,13 @@ router.route('/')
 
 
 
-router.route('/:productSlug')
+router.route('/:slug')
     .patch(
         isAuthunticated,
         isAuthorized(manageProduct),
         multerMiddleHost({}).fields([
-            { name: "new", maxCount: 5 },
-            { name: "update", maxCount: 5 },
+            { name: "newImages", maxCount: 5 },
+            { name: "updatedImages", maxCount: 5 }
         ]),
         asyncHandler(productCtrl.updateProduct)
     )
@@ -35,6 +35,16 @@ router.route('/:productSlug')
         isAuthunticated,
         isAuthorized(manageProduct),
         asyncHandler(productCtrl.deleteProduct)
+    )
+    .get(
+        asyncHandler(productCtrl.getProduct)
+    )
+
+router.route('/:slug/note')
+    .post(
+        isAuthunticated,
+        isAuthorized(accessOnProduct),
+        asyncHandler(productCtrl.adminAddNoteOnProduct)
     )
 
 export { router as productRouter };

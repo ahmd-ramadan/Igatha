@@ -1,7 +1,7 @@
-import { Response } from "express";
+import { Request, Response } from "express";
 import { AuthenticatedRequest } from "../interfaces";
 import { productService } from "../services";
-import { createProductSchema, getAllProductsSchema, slugParamsSchema, updateProductSchema } from "../validation";
+import { adminAddNoteOnProductSchema, createProductSchema, getAllProductsSchema, slugParamsSchema, updateProductSchema } from "../validation";
 import { UserStatusEnum } from "../enums";
 import { CREATED, OK } from "../utils";
 
@@ -48,7 +48,7 @@ export const deleteProduct = async (req: AuthenticatedRequest, res: Response) =>
     });
 }
 
-export const getAllProducts = async (req: AuthenticatedRequest, res: Response) => {
+export const getAllProducts = async (req: Request, res: Response) => {
     const { page, size, search, fromPrice, toPrice, supplierId } = getAllProductsSchema.parse(req.query);
     const products = await productService.getAllProducts({ page, size, search, fromPrice, toPrice, supplierId });
 
@@ -59,4 +59,27 @@ export const getAllProducts = async (req: AuthenticatedRequest, res: Response) =
     });
 }
 
+export const getProduct = async (req: Request, res: Response) => {
+    const { slug: productSlug } = slugParamsSchema.parse(req.params);
+    const product = await productService.findProductBySlug(productSlug);
+
+    res.status(OK).json({
+        success: true,
+        message: 'تم جلب المنتج بنجاح',
+        data: product
+    });
+}
+
+export const adminAddNoteOnProduct = async (req: AuthenticatedRequest, res: Response) => {
+    const { slug: productSlug } = slugParamsSchema.parse(req.params);
+    const { note } = adminAddNoteOnProductSchema.parse(req.body);
+
+    const updatedProduct = await productService.adminAddNoteToProduct({ productSlug, note });
+
+    res.status(OK).json({
+        success: true,
+        message: 'تم إضافة الملاحظة بنجاح',
+        data: updatedProduct
+    });
+}
 

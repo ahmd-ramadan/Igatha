@@ -19,7 +19,7 @@ router.route('/')
     { name: "workPermitImage", maxCount: 1 },
     { name: "workPermitFile", maxCount: 1 },
 ]), (0, express_async_handler_1.default)(controllers_1.kitchenCtrl.kitchenRegister))
-    .patch(middlewares_1.isAuthunticated, (0, middlewares_1.isAuthorized)(access_1.manageCampaign), (0, middlewares_1.multerMiddleHost)({}).fields([
+    .patch(middlewares_1.isAuthunticated, (0, middlewares_1.isAuthorized)(access_1.manageKitchen), (0, middlewares_1.multerMiddleHost)({}).fields([
     { name: "avatar", maxCount: 1 },
     { name: "commercialRegisterImage", maxCount: 1 },
     { name: "commercialRegisterFile", maxCount: 1 },

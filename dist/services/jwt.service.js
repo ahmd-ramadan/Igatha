@@ -29,8 +29,8 @@ class JwtService {
         });
     }
     static generateTokens(user) {
-        const { _id: userId, role } = user;
-        const payload = { userId, role };
+        const { _id: userId, role, status } = user;
+        const payload = { userId, role, status };
         const accessToken = this.generateAccessToken(payload);
         const refreshToken = this.generateRefreshToken(payload);
         return { accessToken, refreshToken };

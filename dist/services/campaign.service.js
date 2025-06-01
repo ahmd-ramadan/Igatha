@@ -18,6 +18,7 @@ const user_service_1 = require("./user.service");
 const enums_1 = require("../enums");
 const request_service_1 = require("./request.service");
 const auth_service_1 = require("./auth.service");
+const hashing_service_1 = require("./hashing.service");
 class CampaignService {
     constructor(campaignDataSource = repositories_1.campaignRepository) {
         this.campaignDataSource = campaignDataSource;
@@ -34,7 +35,7 @@ class CampaignService {
     createCampaign(_a) {
         return __awaiter(this, arguments, void 0, function* ({ data, files }) {
             try {
-                const { email } = data;
+                const { email, password } = data;
                 const isCampaignExist = yield user_service_1.userService.isUserExistByEmail({
                     email,
                     role: enums_1.UserRolesEnum.CAMPAIGN
@@ -42,7 +43,7 @@ class CampaignService {
                 if (isCampaignExist) {
                     throw new utils_1.ApiError('هذا البريد الإلكتروني مستخدم بالفعل', utils_1.CONFLICT);
                 }
-                let newData = Object.assign(Object.assign({}, data), { commercialRegister: {}, hajjReference: {} });
+                let newData = Object.assign(Object.assign({}, data), { password: yield hashing_service_1.HashingService.hash(password), commercialRegister: {}, hajjReference: {} });
                 console.log(files);
                 if (files) {
                     if (files.avatar) {
@@ -118,7 +119,7 @@ class CampaignService {
     }
     updateCampaign(_a) {
         return __awaiter(this, arguments, void 0, function* ({ campaignId, data, files }) {
-            var _b, _c, _d, _e, _f, _g, _h, _j;
+            var _b, _c, _d, _e, _f, _g, _h, _j, _k;
             try {
                 console.log("files", files);
                 //! Have request Update 
@@ -221,6 +222,9 @@ class CampaignService {
                 }
                 // Update campaign data
                 const updatedCampaign = yield this.campaignDataSource.updateOne({ _id: campaignId }, updatedData);
+                if (updatedData.avatar && ((_k = currentCampaign === null || currentCampaign === void 0 ? void 0 : currentCampaign.avatar) === null || _k === void 0 ? void 0 : _k.public_id)) {
+                    yield cloudinary_service_1.cloudinaryService.deleteImage(currentCampaign.avatar.public_id);
+                }
                 // Create update request instead of directly updating
                 let request = requestIsExist || null;
                 if (Object.keys(requestedUpdatedData).length > 0) {
@@ -252,22 +256,23 @@ class CampaignService {
     }
     updateOne(_a) {
         return __awaiter(this, arguments, void 0, function* ({ campaignId, data }) {
+            var _b, _c, _d, _e, _f, _g, _h, _j;
             const { commercialRegister, hajjReference } = yield this.isCampaignExist(campaignId);
             const updatedCampaign = yield this.campaignDataSource.updateOne({ _id: campaignId }, data);
             //! Delete cloudinary previous images
-            if (commercialRegister) {
-                if (commercialRegister.file) {
+            if (data === null || data === void 0 ? void 0 : data.commercialRegister) {
+                if (((_b = data.commercialRegister) === null || _b === void 0 ? void 0 : _b.file) && ((_c = commercialRegister === null || commercialRegister === void 0 ? void 0 : commercialRegister.file) === null || _c === void 0 ? void 0 : _c.public_id)) {
                     yield cloudinary_service_1.cloudinaryService.deleteImage(commercialRegister.file.public_id);
                 }
-                if (commercialRegister.image) {
+                if (((_d = data.commercialRegister) === null || _d === void 0 ? void 0 : _d.image) && ((_e = commercialRegister === null || commercialRegister === void 0 ? void 0 : commercialRegister.image) === null || _e === void 0 ? void 0 : _e.public_id)) {
                     yield cloudinary_service_1.cloudinaryService.deleteImage(commercialRegister.image.public_id);
                 }
             }
-            if (hajjReference) {
-                if (hajjReference.file) {
+            if (data === null || data === void 0 ? void 0 : data.hajjReference) {
+                if (((_f = data.hajjReference) === null || _f === void 0 ? void 0 : _f.file) && ((_g = hajjReference === null || hajjReference === void 0 ? void 0 : hajjReference.file) === null || _g === void 0 ? void 0 : _g.public_id)) {
                     yield cloudinary_service_1.cloudinaryService.deleteImage(hajjReference.file.public_id);
                 }
-                if (hajjReference.image) {
+                if (((_h = data.hajjReference) === null || _h === void 0 ? void 0 : _h.image) && ((_j = hajjReference === null || hajjReference === void 0 ? void 0 : hajjReference.image) === null || _j === void 0 ? void 0 : _j.public_id)) {
                     yield cloudinary_service_1.cloudinaryService.deleteImage(hajjReference.image.public_id);
                 }
             }

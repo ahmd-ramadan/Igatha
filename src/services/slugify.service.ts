@@ -10,7 +10,7 @@ export class SlugifyService {
         locale: 'en'
     }
 
-    async generateSlug(text: string, to: 'category' | 'product') {
+    async generateSlug(text: string, to: 'product') {
         try {
             // let newSlug = slug(text, this.slugOptions);
             let newSlug = text.trim().split(' ').join('-');
@@ -23,7 +23,8 @@ export class SlugifyService {
                 newSlug += `-${generateUniqueString({ length: 3, type: 'numbers' })}`;
             }
             return newSlug;  
-        } catch {
+        } catch(error) {
+            console.log(error)
             throw new ApiError(
                 'Something wen wrong while generating slug',
                 INTERNAL_SERVER_ERROR,

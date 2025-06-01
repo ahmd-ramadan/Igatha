@@ -7,6 +7,11 @@ import { kitchenRouter } from './kitchen.routes';
 import { supplierRouter } from './supplier.routes';
 import { charityRouter } from './charity.routes';
 import { productRouter } from './product.routes';
+import { productCartRouter } from './productCart.routes';
+import { addressRouter } from './address.routes';
+import { productOrderRouter } from './productOrder.routes';
+import { productSubOrderRouter } from './prosuctSubOrders.routes';
+
 const router = Router();
 
 router.use('/auth', authRouter)
@@ -17,5 +22,9 @@ router.use('/kitchen', kitchenRouter)
 router.use('/supplier', supplierRouter)
 router.use('/charity', charityRouter)
 router.use('/product', productRouter)
+router.use('/product-cart', productCartRouter)
+router.use('/address', addressRouter)
+router.use('/product-order', productOrderRouter)
+router.use('/product-suborder', productSubOrderRouter)
 
 export default router;

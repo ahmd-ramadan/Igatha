@@ -55,7 +55,7 @@ class AuthService {
     }
     generateAndStoreTokens(user) {
         return __awaiter(this, void 0, void 0, function* () {
-            const { _id: userId, role } = user;
+            const { _id: userId, role, status } = user;
             const tokens = jwt_service_1.JwtService.generateTokens(user);
             yield token_service_1.tokenService.createOne({
                 token: tokens.refreshToken,
@@ -72,8 +72,8 @@ class AuthService {
     }
     sendVerificationEmail(user) {
         return __awaiter(this, void 0, void 0, function* () {
-            const { _id: userId, role } = user;
-            const verificationToken = jwt_service_1.JwtService.generateAccessToken({ userId, role }, 24 * 60 * 60);
+            const { _id: userId, role, status } = user;
+            const verificationToken = jwt_service_1.JwtService.generateAccessToken({ userId, role, status }, 24 * 60 * 60);
             yield token_service_1.tokenService.createOne({
                 userId,
                 token: verificationToken,
@@ -164,6 +164,7 @@ class AuthService {
                 return { data: userResponse, tokens };
             }
             catch (error) {
+                console.log(error);
                 if (error instanceof utils_1.ApiError) {
                     throw error;
                 }

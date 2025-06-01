@@ -14,7 +14,9 @@ export interface IProductModel extends IDBModel {
     adminNotes: string;
     isActive: boolean;
     isDeleted: boolean;
-    minimumQuantity: number;
+    minimumOrderQuantity: number;
+    appliedPrice: number;
+    saleCounter: number;
 }
 
 export interface IProduct extends IProductModel {
@@ -27,7 +29,18 @@ export interface ICreateProductQuery {
     price: number;
     discount?: number;
     stock: number;
-    minimumQuantity: number;
+    minimumOrderQuantity: number;
+}
+
+export interface IUpdateProductQuery {
+    title?: string;
+    desc?: string;
+    price?: number;
+    discount?: number;
+    stock?: number;
+    minimumOrderQuantity?: number;
+    updatedImagesIds?: string[];
+    deletedImagesIds?: string[];
 }
 
 

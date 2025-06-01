@@ -87,21 +87,14 @@ class GeneralRepository {
     findWithPopulate(query, populate, options) {
         return __awaiter(this, void 0, void 0, function* () {
             let dbQuery = this.dbClient.find(query);
-            if (options === null || options === void 0 ? void 0 : options.skip)
+            if ((options === null || options === void 0 ? void 0 : options.skip) !== undefined)
                 dbQuery = dbQuery.skip(options.skip);
-            if (options === null || options === void 0 ? void 0 : options.limit)
+            if ((options === null || options === void 0 ? void 0 : options.limit) !== undefined)
                 dbQuery = dbQuery.limit(options.limit);
-            const nonPopulatedResponse = yield this.populateHelper(dbQuery, populate);
-            let populatedResponse = [];
-            for (const r of nonPopulatedResponse) {
-                if (r) {
-                    const response = yield this.findOneWithPopulate(r, populate);
-                    if (response) {
-                        populatedResponse.push(response);
-                    }
-                }
-            }
-            return populatedResponse;
+            if ((options === null || options === void 0 ? void 0 : options.sort) !== undefined)
+                dbQuery = dbQuery.sort(options.sort);
+            const populatedResponse = yield this.populateHelper(dbQuery, populate);
+            return populatedResponse !== null && populatedResponse !== void 0 ? populatedResponse : [];
         });
     }
     findById(objectId) {

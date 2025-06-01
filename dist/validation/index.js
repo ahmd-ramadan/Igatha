@@ -26,3 +26,8 @@ __exportStar(require("./charity.validation"), exports);
 __exportStar(require("./kitchen.validation"), exports);
 __exportStar(require("./guest.validation"), exports);
 __exportStar(require("./request.validation"), exports);
+__exportStar(require("./product.validation"), exports);
+__exportStar(require("./productCart.validation"), exports);
+__exportStar(require("./address.validation"), exports);
+__exportStar(require("./productOrder.validation"), exports);
+__exportStar(require("./productSubOrder.validation"), exports);

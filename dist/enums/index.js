@@ -17,3 +17,5 @@ Object.defineProperty(exports, "__esModule", { value: true });
 __exportStar(require("./user.enums"), exports);
 __exportStar(require("./token.enums"), exports);
 __exportStar(require("./request.enums"), exports);
+__exportStar(require("./order.enums"), exports);
+__exportStar(require("./payment.enums"), exports);

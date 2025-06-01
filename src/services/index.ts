@@ -13,4 +13,7 @@ export * from './kitchen.service'
 export * from './supplier.service'
 export * from './charity.service'
 export * from './product.service'
+export * from './productCart.service'
+export * from './address.service'
+export * from './productSubOrder.service'
 

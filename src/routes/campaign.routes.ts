@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { campaignCtrl } from '../controllers';
-import { allowedExtensions, isAuthorized, isAuthunticated, multerMiddleHost } from '../middlewares';
+import { isAuthorized, isAuthunticated, multerMiddleHost } from '../middlewares';
 import asyncHandler from 'express-async-handler'
 import { manageCampaign } from '../access';
 

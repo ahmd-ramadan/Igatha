@@ -7,6 +7,7 @@ import { ApiError, BAD_REQUEST, CONFLICT, INTERNAL_SERVER_ERROR, NOT_FOUND } fro
 import { authService } from "./auth.service";
 import { cloudinaryService } from "./cloudinary.service";
 import { HashingService } from "./hashing.service";
+import { productService } from "./product.service";
 import { requestService } from "./request.service";
 import { userService } from "./user.service";
 
@@ -308,6 +309,12 @@ class SupplierService {
                 await cloudinaryService.deleteImage(workPermit.image.public_id)
             }
         }
+
+        //! Updated All Product isActive
+        const updatedSupplierProducts = await productService.updateMany({
+            query: { supplierId },
+            data: { isActive: true }
+        })
         
         return updatedSupplier;
     }

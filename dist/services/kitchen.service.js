@@ -16,6 +16,7 @@ const repositories_1 = require("../repositories");
 const utils_1 = require("../utils");
 const auth_service_1 = require("./auth.service");
 const cloudinary_service_1 = require("./cloudinary.service");
+const hashing_service_1 = require("./hashing.service");
 const request_service_1 = require("./request.service");
 const user_service_1 = require("./user.service");
 class KitchenService {
@@ -34,7 +35,7 @@ class KitchenService {
     createKitchen(_a) {
         return __awaiter(this, arguments, void 0, function* ({ data, files }) {
             try {
-                const { email } = data;
+                const { email, password } = data;
                 const isKitchenExist = yield user_service_1.userService.isUserExistByEmail({
                     email,
                     role: enums_1.UserRolesEnum.KITCHEN
@@ -42,7 +43,7 @@ class KitchenService {
                 if (isKitchenExist) {
                     throw new utils_1.ApiError('هذا البريد الإلكتروني مستخدم بالفعل', utils_1.CONFLICT);
                 }
-                let newData = Object.assign(Object.assign({}, data), { commercialRegister: {}, workPermit: {} });
+                let newData = Object.assign(Object.assign({}, data), { password: yield hashing_service_1.HashingService.hash(password), commercialRegister: {}, workPermit: {} });
                 console.log(files);
                 if (files) {
                     if (files.avatar) {
@@ -115,7 +116,7 @@ class KitchenService {
     }
     updateKitchen(_a) {
         return __awaiter(this, arguments, void 0, function* ({ kitchenId, data, files }) {
-            var _b, _c, _d, _e, _f, _g, _h, _j;
+            var _b, _c, _d, _e, _f, _g, _h, _j, _k;
             try {
                 console.log("files", files);
                 //! Have request Update 
@@ -213,6 +214,9 @@ class KitchenService {
                 }
                 // Update kitchen data
                 const updatedKitchen = yield this.kitchenDataSource.updateOne({ _id: kitchenId }, updatedData);
+                if (updatedData.avatar && ((_k = currentKitchen === null || currentKitchen === void 0 ? void 0 : currentKitchen.avatar) === null || _k === void 0 ? void 0 : _k.public_id)) {
+                    yield cloudinary_service_1.cloudinaryService.deleteImage(currentKitchen.avatar.public_id);
+                }
                 // Create update request instead of directly updating
                 let request = requestIsExist || null;
                 if (Object.keys(requestedUpdatedData).length > 0) {
@@ -244,25 +248,31 @@ class KitchenService {
     }
     updateOne(_a) {
         return __awaiter(this, arguments, void 0, function* ({ kitchenId, data }) {
+            var _b, _c, _d, _e, _f, _g, _h, _j;
             const { commercialRegister, workPermit } = yield this.isKitchenExist(kitchenId);
             const updatedKitchen = yield this.kitchenDataSource.updateOne({ _id: kitchenId }, data);
             //! Delete cloudinary previous images
-            if (commercialRegister) {
-                if (commercialRegister.file) {
+            if (data === null || data === void 0 ? void 0 : data.commercialRegister) {
+                if (((_b = data.commercialRegister) === null || _b === void 0 ? void 0 : _b.file) && ((_c = commercialRegister === null || commercialRegister === void 0 ? void 0 : commercialRegister.file) === null || _c === void 0 ? void 0 : _c.public_id)) {
                     yield cloudinary_service_1.cloudinaryService.deleteImage(commercialRegister.file.public_id);
                 }
-                if (commercialRegister.image) {
+                if (((_d = data.commercialRegister) === null || _d === void 0 ? void 0 : _d.image) && ((_e = commercialRegister === null || commercialRegister === void 0 ? void 0 : commercialRegister.image) === null || _e === void 0 ? void 0 : _e.public_id)) {
                     yield cloudinary_service_1.cloudinaryService.deleteImage(commercialRegister.image.public_id);
                 }
             }
-            if (workPermit) {
-                if (workPermit.file) {
+            if (data === null || data === void 0 ? void 0 : data.workPermit) {
+                if (((_f = data.workPermit) === null || _f === void 0 ? void 0 : _f.file) && ((_g = workPermit === null || workPermit === void 0 ? void 0 : workPermit.file) === null || _g === void 0 ? void 0 : _g.public_id)) {
                     yield cloudinary_service_1.cloudinaryService.deleteImage(workPermit.file.public_id);
                 }
-                if (workPermit.image) {
+                if (((_h = data.workPermit) === null || _h === void 0 ? void 0 : _h.image) && ((_j = workPermit === null || workPermit === void 0 ? void 0 : workPermit.image) === null || _j === void 0 ? void 0 : _j.public_id)) {
                     yield cloudinary_service_1.cloudinaryService.deleteImage(workPermit.image.public_id);
                 }
             }
+            //! Updated All Meals isActive
+            // const updatedSupplierProducts = await mealService.updateMany({
+            //     query: { kitchenId },
+            //     data: { isActive: true }
+            // })
             return updatedKitchen;
         });
     }

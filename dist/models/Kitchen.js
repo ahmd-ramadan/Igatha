@@ -31,5 +31,17 @@ const kitchenSchema = new mongoose_1.Schema({
         type: Number,
         default: 0,
     },
+    sales: {
+        type: Number,
+        default: 0,
+    },
+    totalBalance: {
+        type: Number,
+        default: 0,
+    },
+    currentBalance: {
+        type: Number,
+        default: 0,
+    },
 });
 exports.Kitchen = User_1.User.discriminator('Kitchen', kitchenSchema);

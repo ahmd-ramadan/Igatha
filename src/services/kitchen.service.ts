@@ -307,6 +307,12 @@ class KitchenService {
                 await cloudinaryService.deleteImage(workPermit.image.public_id)
             }
         }
+
+         //! Updated All Meals isActive
+        // const updatedSupplierProducts = await mealService.updateMany({
+        //     query: { kitchenId },
+        //     data: { isActive: true }
+        // })
         
         return updatedKitchen;
     }
