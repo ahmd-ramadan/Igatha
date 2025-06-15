@@ -1,17 +1,22 @@
 import { model, Schema } from "mongoose";
-import { IProductCartModel, IProductModel } from "../interfaces"
+import { IMealCartModel, IProductCartModel } from "../interfaces"
 
-const productCartSchema = new Schema({
-    kitchenId: { 
+const mealCartSchema = new Schema({
+    campaignId: { 
         type: Schema.Types.ObjectId, 
         ref: "Kitchen",
         required: true
     },
-    products: [
+    meals: [
         {
-            productId: {
+            mealId: {
                 type: Schema.Types.ObjectId,
-                ref: 'Product',
+                ref: 'Meal',
+                required: true
+            },
+            kitchenId: {
+                type: Schema.Types.ObjectId,
+                ref: 'Kitchen',
                 required: true
             },
             price: {
@@ -40,9 +45,9 @@ const productCartSchema = new Schema({
 });
 
 
-productCartSchema.virtual('kitchenData', {
-    ref: 'Kitchen',
-    localField: 'kitchenId',
+mealCartSchema.virtual('campaignData', {
+    ref: 'Campaign',
+    localField: 'campaignId',
     foreignField: '_id',
     justOne: true,
     options: { 
@@ -50,20 +55,19 @@ productCartSchema.virtual('kitchenData', {
     }  
 });
 
-productCartSchema.virtual('productsData', {
-    ref: 'Product',
-    localField: 'products.productId',
+mealCartSchema.virtual('mealsData', {
+    ref: 'Meal',
+    localField: 'meals.productId',
     foreignField: '_id',
     justOne: false,
     options: {
-        select: 'appliedPrice images title slug desc minimumOrderQuantity supplierId',
+        select: 'appliedPrice images title slug desc minimumOrderQuantity',
         populate: {
-            path: 'supplierData',
-            select: 'name avatar role rating'
+            path: 'supplierData'
         }
     }  
 });
 
 
 
-export const ProductCart = model<IProductCartModel>("ProductCart", productCartSchema);
+export const MealCart = model<IMealCartModel>("MealCart", mealCartSchema);

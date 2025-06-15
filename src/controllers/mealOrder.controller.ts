@@ -1,20 +1,20 @@
 import { Response } from "express";
 import { AuthenticatedRequest } from "../interfaces";
-import { ApiError, CONFLICT, CREATED, OK } from "../utils";
-import { confirmOrderSchema, createProductOrderSchema, getAllOrdersSchema, orderParamsSchema, paginationSchema } from "../validation";
+import { confirmMealOrderSchema, createMealOrderSchema, getAllMealOrdersSchema, orderMealParamsSchema, paginationSchema } from "../validation";
 import { UserStatusEnum } from "../enums";
-import { productOrderService } from "../services/productOrder.service";
+import { ApiError, CONFLICT, CREATED, OK } from "../utils";
+import { mealOrderService } from "../services";
 
-export const createProductOrder = async(req: AuthenticatedRequest, res: Response) => {
-    const data = createProductOrderSchema.parse(req.body);
-    const kitchenId = req.user?.userId as string;
+export const createMealOrder = async(req: AuthenticatedRequest, res: Response) => {
+    const data = createMealOrderSchema.parse(req.body);
+    const campaignId = req.user?.userId as string;
     const status = req.user?.status as UserStatusEnum;
 
     if (status !== UserStatusEnum.APPROVED) {
         throw new ApiError('لم يوافق الأدمن علي إنضمامك بعد لايمكنك إجراء أي طلب', CONFLICT)
     }
 
-    const newOrder = await productOrderService.createOrder({ ...data, kitchenId });
+    const newOrder = await mealOrderService.createOrder({ data, campaignId });
 
     res.status(CREATED).json({
         success: true,
@@ -27,7 +27,7 @@ export const createProductOrder = async(req: AuthenticatedRequest, res: Response
 //     const { orderId } = confirmOrderSchema.parse(req.body);
 //     const userId = req.user?.userId as string;
 
-//     const confirmedOrder = await productOrderService.confirmOrder(orderId);
+//     const confirmedOrder = await mealOrderService.confirmOrder(orderId);
 
 //     res.status(OK).json({
 //         success: true,
@@ -37,9 +37,9 @@ export const createProductOrder = async(req: AuthenticatedRequest, res: Response
 // }
 
 export const cancelOrder = async(req: AuthenticatedRequest, res: Response) => {
-    const { orderId } = confirmOrderSchema.parse(req.body);
+    const { orderId } = confirmMealOrderSchema.parse(req.body);
 
-    const canceledOrder = await productOrderService.cancelOrder(orderId);
+    const canceledOrder = await mealOrderService.cancelOrder(orderId);
 
     res.status(OK).json({
         success: true,
@@ -49,9 +49,9 @@ export const cancelOrder = async(req: AuthenticatedRequest, res: Response) => {
 }
 
 export const updateOrderStatus = async(req: AuthenticatedRequest, res: Response) => {
-    const { orderId } = confirmOrderSchema.parse(req.body);
+    const { orderId } = confirmMealOrderSchema.parse(req.body);
 
-    const upadtedOrder = await productOrderService.updateOrderStatus(orderId);
+    const upadtedOrder = await mealOrderService.updateOrderStatus(orderId);
 
     res.status(OK).json({
         success: true,
@@ -61,9 +61,9 @@ export const updateOrderStatus = async(req: AuthenticatedRequest, res: Response)
 }
 
 export const getOrder = async(req: AuthenticatedRequest, res: Response) => {
-    const { orderCode } = orderParamsSchema.parse(req.params);
+    const { orderCode } = orderMealParamsSchema.parse(req.params);
 
-    const order = await productOrderService.getOrder(orderCode);
+    const order = await mealOrderService.getOrder(orderCode);
 
     res.status(OK).json({
         success: true,
@@ -74,8 +74,8 @@ export const getOrder = async(req: AuthenticatedRequest, res: Response) => {
 
 export const getAllOrders = async(req: AuthenticatedRequest, res: Response) => {
     const { page, size } = paginationSchema.parse(req.query);
-    const data = getAllOrdersSchema.parse(req.query);
-    const orders = await productOrderService.getAllOrders({ ... data, page, size });
+    const data = getAllMealOrdersSchema.parse(req.query);
+    const orders = await mealOrderService.getAllOrders({ ... data, page, size });
    
     res.status(OK).json({
         success: true,

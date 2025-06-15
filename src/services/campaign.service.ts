@@ -9,6 +9,7 @@ import { requestService } from "./request.service";
 import { authService } from "./auth.service";
 import { RequiredMediaAsset } from "../types";
 import { HashingService } from "./hashing.service";
+import { surplusService } from "./surplus.service";
 
 class CampaignService {
 
@@ -317,6 +318,13 @@ class CampaignService {
             }
         }
         
+
+        //! Updated All Surpluses isActive
+        const updatedCampaignSurpluses = await surplusService.updateMany({
+            query: { userId: campaignId },
+            data: { isActive: true }
+        })
+
         return updatedCampaign;
     }
 }

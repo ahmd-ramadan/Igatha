@@ -1,17 +1,17 @@
+import { FilterQuery } from "mongoose";
 import { OrderStatus } from "../enums";
-import { ICreateProductOrderData, ICreateProductOrderQuery, IProduct, IProductOrder, IProductOrderItem, IProductOrderModel } from "../interfaces";
-import { productOrderRepository } from "../repositories";
+import { ICreateMealOrderData, ICreateMealOrderQuery, IMeal, IMealOrder, IMealOrderItem } from "../interfaces";
+import { mealOrderRepository } from "../repositories";
 import { ApiError, BAD_REQUEST, CONFLICT, generateUniqueString, INTERNAL_SERVER_ERROR, NOT_FOUND, pagination } from "../utils";
 import { addressService } from "./address.service";
-import { productService } from "./product.service";
-import { productCartService } from "./productCart.service";
-import { productSubOrderService } from "./productSubOrder.service";
+import { mealService } from "./meal.service";
+import { mealCartService } from "./mealCart.service";
 
-class ProductOrderService {
+class MealOrderService {
 
-    private readonly populatedArray = [ 'kitchenData', 'shippingAddressData', 'suppliersData'];
+    private readonly populatedArray = [ 'kitchenData', 'shippingAddressData', 'campaignData'];
 
-    constructor(private readonly orderDataSource = productOrderRepository) {}
+    constructor(private readonly orderDataSource = mealOrderRepository) {}
 
     async findOrderByCode(orderCode: string) {
         return await this.orderDataSource.findOneWithPopulate({ orderCode }, this.populatedArray);
@@ -25,23 +25,28 @@ class ProductOrderService {
         return await this.orderDataSource.findOneWithPopulate(query, this.populatedArray);
     }
 
-    async createOrder(data: ICreateProductOrderQuery) {
+    async createOrder({ campaignId, data }: { campaignId: string, data: ICreateMealOrderQuery }) {
         try {
             const { kitchenId, shippingAddressId } = data
             
-            const orderItems: IProductOrderItem[] = [];
+            const orderItems: IMealOrderItem[] = [];
             let subtotalPrice = 0;
 
-            // check cart products is avalible & make operation on its
-            const userCart = await productCartService.isProductCartExists(kitchenId);
-            for (const { productId, quantity, note } of userCart.products) {
-                const product = await productCartService.isProductAvailble({ productId, quantity });
-                const { appliedPrice, minimumOrderQuantity, title } = product;
+            // check cart meals is avalible & make operation on its
+            const userCart = await mealCartService.isMealCartExists(campaignId);
+            const kitchenMeals = userCart.meals.filter(m => m.kitchenId.toString() === kitchenId.toString());
+            
+            if(kitchenMeals.length <= 0) {
+                throw new ApiError('ليس لديك اي منتجات من  مركز الإعاشة هذا في السلة', CONFLICT)
+            }
+            for (const { mealId, quantity, note } of kitchenMeals) {
+                const meal = await mealCartService.isMealAvailble({ mealId, quantity });
+                const { appliedPrice, minimumOrderQuantity, title } = meal;
                 if (quantity < minimumOrderQuantity) {
                     throw new ApiError(`الكمية المطلوبة أقل من الكمية الأدني للطلب ${minimumOrderQuantity} للمنتج ${title}`, BAD_REQUEST);
                 }
-                const orderProduct = this.makeOrderItemsObject({ product, quantity, note });
-                orderItems.push(orderProduct);
+                const orderMeal = this.makeOrderItemsObject({ meal, quantity, note });
+                orderItems.push(orderMeal);
                 subtotalPrice += quantity * appliedPrice;
             }
             
@@ -52,7 +57,7 @@ class ProductOrderService {
             //     couponDetails = await this.makeOrderCouponObject({
             //         totalPurchase: subtotalPrice,
             //         userId,
-            //         products: orderItems,
+            //         meals: orderItems,
             //         couponCode
             //     });
             // }
@@ -65,9 +70,10 @@ class ProductOrderService {
             const totalPrice = subtotalPrice + shippingPrice;
 
             //! save order
-            const orderProductObject: ICreateProductOrderData = {
+            const orderMealObject: ICreateMealOrderData = {
                 shippingAddressId,
                 kitchenId,
+                campaignId,
                 orderCode,
                 orderItems,
                 shippingPrice,
@@ -81,32 +87,26 @@ class ProductOrderService {
                 ],
             }
             // if (couponCode && couponDetails && couponDetails?.code) {
-            //     orderProductObject.coupon = couponDetails
+            //     orderMealObject.coupon = couponDetails
             // }
 
-            const createdOrder = await this.orderDataSource.createOne(orderProductObject, this.populatedArray);
+            const createdOrder = await this.orderDataSource.createOne(orderMealObject, this.populatedArray);
 
             if (!createdOrder) {
                 throw new ApiError('فشلت عملية إنشاء الطلب', INTERNAL_SERVER_ERROR)
             }
 
-            //! Make SubOrders To Suppliers
-            const isOk = await productSubOrderService.createSubOrdersFromOrders(createdOrder); 
-            if (!isOk) {
-                throw new ApiError('فشل في إرسال الطلب للمورين', CONFLICT)
-            }
-
-            //! decrease product stock & increase saleCounter & delete cart products
-            for (const { productId, quantity } of userCart.products) {
-                let product = await productService.isProductExist(productId);
-                const updatedProductData = { 
-                    stock: product.stock - quantity, 
-                    saleCounter: product.saleCounter + quantity 
+            //! decrease meal stock & increase saleCounter & delete cart meals for one kitchen
+            for (const { mealId, quantity } of userCart.meals) {
+                let meal = await mealService.isMealExist(mealId);
+                const updatedMealData = { 
+                    stock: meal.stock - quantity, 
+                    saleCounter: meal.saleCounter + quantity 
                 };
 
-                await productService.updateOne({ query: { slug: product.slug, _id: product._id }, data: updatedProductData });
+                await mealService.updateOne({ query: { slug: meal.slug, _id: meal._id }, data: updatedMealData });
             }
-            await productCartService.clearProductsCart(kitchenId);
+            await mealCartService.clearMealsCartForKitchen({ kitchenId, campaignId });
             
             //! increasw used of coupon
             // if (couponCode) {
@@ -130,28 +130,27 @@ class ProductOrderService {
         }
     }
 
-    private makeOrderItemsObject({ product, quantity, note }: { product: IProduct, quantity: number, note?: string }): IProductOrderItem {
+    private makeOrderItemsObject({ meal, quantity, note }: { meal: IMeal, quantity: number, note?: string }): IMealOrderItem {
         return {
-            image: product?.images[0],
-            price: product.appliedPrice,
-            productId: product._id,
-            slug: product.slug,
-            title: product.title,
+            image: meal?.images[0],
+            price: meal.appliedPrice,
+            mealId: meal._id,
+            slug: meal.slug,
+            title: meal.title,
             quantity,
-            supplierId: product.supplierId,
             note: note || ""          
         }
     }
     
     // private async makeOrderCouponObject(
-    //     { products, userId, couponCode, totalPurchase }: 
-    //     { products: IProductOrderItem[], userId: string; couponCode: string, totalPurchase: number }): Promise<IOrderCoupon> {
+    //     { meals, userId, couponCode, totalPurchase }: 
+    //     { meals: IMealOrderItem[], userId: string; couponCode: string, totalPurchase: number }): Promise<IOrderCoupon> {
         
     //     return await couponService.checkCouponDiscount({
     //         couponCode,
-    //         products: products.map(p => (
+    //         meals: meals.map(p => (
     //             {
-    //                 productId: p.productId,
+    //                 mealId: p.mealId,
     //             }
     //         )),
     //         totalPurchase,
@@ -232,14 +231,14 @@ class ProductOrderService {
                 occuredAt: new Date()
             })
 
-            for (const { productId, quantity } of isOrderExist.orderItems) {
-                let product = await productService.isProductExist(productId);
-                const updatedProductData = { 
-                    stock: product.stock + quantity, 
-                    saleCounter: product.saleCounter - quantity 
+            for (const { mealId, quantity } of isOrderExist.orderItems) {
+                let meal = await mealService.isMealExist(mealId);
+                const updatedMealData = { 
+                    stock: meal.stock + quantity, 
+                    saleCounter: meal.saleCounter - quantity 
                 };
 
-                await productService.updateOne({ query: { slug: product.slug, _id: product._id }, data: updatedProductData });
+                await mealService.updateOne({ query: { slug: meal.slug, _id: meal._id }, data: updatedMealData });
             }
 
             return await this.orderDataSource.updateOne({ _id: orderId }, { timeline });
@@ -302,10 +301,11 @@ class ProductOrderService {
         }
     }
 
-    async getAllOrders({ kitchenId, page, size }: { kitchenId?: string, page: number, size: number }) {
+    async getAllOrders({ kitchenId, campaignId, page, size }: { kitchenId?: string, campaignId?: string, page: number, size: number }) {
         try {
-            let query: Partial<IProductOrder> = {};
-            if(kitchenId) query.kitchenId = kitchenId;
+            let query: FilterQuery<IMealOrder> = {};
+            if(kitchenId) query.kitcehnId = kitchenId;
+            if(campaignId) query.campaignId = campaignId;
 
             const { limit, skip } = pagination({ page, size });
 
@@ -330,4 +330,4 @@ class ProductOrderService {
     }
 }
 
-export const productOrderService = new ProductOrderService();
+export const mealOrderService = new MealOrderService();

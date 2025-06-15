@@ -1,50 +1,50 @@
-import strict from "assert/strict";
-import { cloudinaryProductsFolder } from "../config";
+import { randomInt } from "crypto";
+import { cloudinaryMealsFolder } from "../config";
 import { UserStatusEnum } from "../enums";
-import { ICreateProductQuery, IProductModel, IUpdateProductQuery } from "../interfaces";
-import { productRepository } from "../repositories";
+import { ICreateMealQuery, IMealModel, IUpdateMealQuery } from "../interfaces";
+import { mealRepository } from "../repositories";
 import { ApiError, BAD_REQUEST, FORBIDDEN, INTERNAL_SERVER_ERROR, NOT_FOUND, pagination } from "../utils";
 import { cloudinaryService } from "./cloudinary.service";
 import { slugService } from "./slugify.service";
 import { FilterQuery, UpdateQuery } from "mongoose";
 
 
-class ProductService {
+class MealService {
 
-    private readonly populatedArray = ['supplierData']
+    private readonly populatedArray = ['kitchenData']
     constructor(
-        private readonly productDataSource = productRepository
+        private readonly mealDataSource = mealRepository
     ) {}
 
-    async isProductExist(productId: string) {
-        const product = await this.productDataSource.findOneWithPopulate({ _id: productId }, this.populatedArray);
-        if (!product) {
-            throw new ApiError('المنتج غير موجود', NOT_FOUND);
+    async isMealExist(mealId: string) {
+        const meal = await this.mealDataSource.findOneWithPopulate({ _id: mealId }, this.populatedArray);
+        if (!meal) {
+            throw new ApiError('الوجبة غير موجود', NOT_FOUND);
         }
-        return product;
+        return meal;
     }
 
-    async findProductBySlug(slug: string) {
+    async findMealBySlug(slug: string) {
         try {
             const decodedSlug = decodeURIComponent(slug);
-            const product = await this.productDataSource.findOneWithPopulate({ slug: decodedSlug }, this.populatedArray);
-            return product;
+            const meal = await this.mealDataSource.findOneWithPopulate({ slug: decodedSlug }, this.populatedArray);
+            return meal;
         } catch (error) {
-            throw new ApiError('Error finding product by slug:', INTERNAL_SERVER_ERROR);
+            throw new ApiError('Error finding meal by slug:', INTERNAL_SERVER_ERROR);
         }
     }
 
-    async createProduct({ supplierStatus, supplierId, data, files }: { supplierStatus: UserStatusEnum, supplierId: string; data: ICreateProductQuery, files: any }) {
+    async createMeal({ kitchenStatus, kitchenId, data, files }: { kitchenStatus: UserStatusEnum, kitchenId: string; data: ICreateMealQuery, files: any }) {
         try{
             const { title, desc, price, discount, stock, minimumOrderQuantity } = data;
-            // Slugify
-            const slug = (await slugService.generateSlug(title, 'product')).replace(/#/g, '8');
+            // Slugify and replace # with -
+            const slug = (await slugService.generateSlug(title, 'meal')).replace(/#/g, '8');
 
-            console.log(supplierStatus)
+            console.log(kitchenStatus)
             
-            // Is suppler Approved
+            // Is kitcehn Approved
             let isActive = false;
-            if (supplierStatus === UserStatusEnum.APPROVED) {
+            if (kitchenStatus === UserStatusEnum.APPROVED) {
                 isActive = true;
             }
 
@@ -57,14 +57,14 @@ class ProductService {
             for(const file of files.images) {
                 const image = await cloudinaryService.uploadImage({
                     fileToUpload: file.path,
-                    folderPath: cloudinaryProductsFolder
+                    folderPath: cloudinaryMealsFolder
                 });
                 images.push(image);
             }
 
             const appliedPrice = price - (price * (discount || 0));
 
-            const product = await this.productDataSource.createOne({
+            const meal = await this.mealDataSource.createOne({
                 title,
                 slug,
                 desc,
@@ -73,39 +73,40 @@ class ProductService {
                 images,
                 stock,
                 isActive,
-                supplierId,
+                kitchenId,
                 appliedPrice,
                 minimumOrderQuantity,
             }, this.populatedArray)
 
-            return product;
+            return meal;
         } catch(error) {
             console.log(error);
             if (error instanceof ApiError) {
                 throw error;
             }
-            throw new ApiError('حدث خطأ أثناء إضافة المنتج', INTERNAL_SERVER_ERROR);
+            throw new ApiError('حدث خطأ أثناء إضافة الوجبة', INTERNAL_SERVER_ERROR);
         }
     }
 
-    async updateProduct({ productSlug, supplierId,  data, files }: { productSlug: string, supplierId: string, data: IUpdateProductQuery, files: any }) {
+    async updateMeal({ mealSlug, kitchenId,  data, files }: { mealSlug: string, kitchenId: string, data: IUpdateMealQuery, files: any }) {
         try{
             const { title, desc, price, discount, stock, minimumOrderQuantity, updatedImagesIds, deletedImagesIds } = data;
-            const product = await this.findProductBySlug(productSlug);
-            if (!product) {
-                throw new ApiError('المنتج غير موجود', NOT_FOUND);
+            const meal = await this.findMealBySlug(mealSlug);
+            if (!meal) {
+                throw new ApiError('الوجبة غير موجود', NOT_FOUND);
             }
-            if (product.supplierId.toString() !== supplierId.toString()) {
-                throw new ApiError('لا يمكن تحديث هذا المنتج', FORBIDDEN);
+            if (meal.kitchenId.toString() !== kitchenId.toString()) {
+                throw new ApiError('لا يمكن تحديث هذه الوجبة', FORBIDDEN);
             }
 
-            const updatedData: Partial<IProductModel> = {};
+            const updatedData: Partial<IMealModel> = {};
             if (title) {
                 updatedData.title = title;
-                updatedData.slug = await slugService.generateSlug(title, 'product');
+                updatedData.slug = (await slugService.generateSlug(title, 'meal')).replace(/#/g, '-');
             }
             if (desc) updatedData.desc = desc;
-            let newPrice = product.price, newDiscount = product.discount; 
+
+            let newPrice = meal.price, newDiscount = meal.discount; 
             if (price !== undefined) updatedData.price = newPrice = price;
             if (discount !== undefined) updatedData.discount = newDiscount = discount;
             updatedData.appliedPrice = (newPrice) - (newDiscount* (newPrice) / 100)
@@ -113,7 +114,7 @@ class ProductService {
             if (minimumOrderQuantity !== undefined) updatedData.minimumOrderQuantity = minimumOrderQuantity;
 
             //! Images
-            let newImages = product.images;
+            let newImages = meal.images;
             if (files) {
                 if (deletedImagesIds && deletedImagesIds?.length > 0) {
                     if(deletedImagesIds?.length > newImages?.length) {
@@ -135,7 +136,7 @@ class ProductService {
                         const updatedImage = await cloudinaryService.updateImage({
                             oldPublicId: updatedImagesIds[i],
                             fileToUpload: files?.updatedImages[i].path,
-                            folderPath: cloudinaryProductsFolder,
+                            folderPath: cloudinaryMealsFolder,
                         })
                         console.log("updatedImage", updatedImage);
                         console.log("newImages", newImages);
@@ -147,7 +148,7 @@ class ProductService {
                     for(const file of files.newImages) {
                         const image = await cloudinaryService.uploadImage({
                             fileToUpload: file.path, 
-                            folderPath: cloudinaryProductsFolder, 
+                            folderPath: cloudinaryMealsFolder, 
                         });
                         newImages.push(image);
                     }
@@ -155,43 +156,43 @@ class ProductService {
             } 
             updatedData.images = newImages;
 
-            const updatedProduct = await this.productDataSource.updateOne({ _id: product._id, slug: productSlug, supplierId }, updatedData, this.populatedArray);
+            const updatedMeal = await this.mealDataSource.updateOne({ _id: meal._id, slug: mealSlug, kitchenId }, updatedData, this.populatedArray);
 
-            return updatedProduct;            
+            return updatedMeal;            
         } catch(error) {
             console.log(error);
             if (error instanceof ApiError) {
                 throw error;
             }
-            throw new ApiError('حدث خطأ أثناء تحديث المنتج', INTERNAL_SERVER_ERROR);
+            throw new ApiError('حدث خطأ أثناء تحديث الوجبة', INTERNAL_SERVER_ERROR);
         }
     }
 
-    async deleteProduct({ productSlug, supplierId }: { productSlug: string, supplierId: string }) {
+    async deleteMeal({ mealSlug, kitchenId }: { mealSlug: string, kitchenId: string }) {
         try{
-            const product = await this.findProductBySlug(productSlug);
-            if (!product) {
-                throw new ApiError('المنتج غير موجود', NOT_FOUND);
+            const meal = await this.findMealBySlug(mealSlug);
+            if (!meal) {
+                throw new ApiError('الوجبة غير موجودة', NOT_FOUND);
             }
-            if (product.supplierId.toString() !== supplierId.toString()) {
-                throw new ApiError('لا يمكن حذف هذا المنتج', FORBIDDEN);
+            if (meal.kitchenId.toString() !== kitchenId.toString()) {
+                throw new ApiError('لا يمكن حذف هذه الوجبة', FORBIDDEN);
             }
-            if(product.isDeleted) {
-                throw new ApiError('المنتج محذوف بالفعل', BAD_REQUEST);
+            if(meal.isDeleted) {
+                throw new ApiError('الوجبة محذوفة بالفعل', BAD_REQUEST);
             }
 
-            const deletedProduct = await this.productDataSource.updateOne({ _id: product._id, slug: productSlug }, { isDeleted: true, isActive: false }, this.populatedArray);
+            const deletedMeal = await this.mealDataSource.updateOne({ _id: meal._id, slug: mealSlug }, { isDeleted: true, isActive: false }, this.populatedArray);
 
-            return deletedProduct;            
+            return deletedMeal;            
         } catch(error) {
             if (error instanceof ApiError) {
                 throw error;
             }
-            throw new ApiError('حدث خطأ أثناء حذف المنتج', INTERNAL_SERVER_ERROR);
+            throw new ApiError('حدث خطأ أثناء حذف الوجبة', INTERNAL_SERVER_ERROR);
         }
     }
 
-    async getAllProducts({ page, size, search, fromPrice, toPrice, supplierId }: { page: number, size: number, search?: string, fromPrice?: number, toPrice?: number, supplierId?: string }) {
+    async getAllMeals({ page, size, search, fromPrice, toPrice, kitchenId }: { page: number, size: number, search?: string, fromPrice?: number, toPrice?: number, kitchenId?: string }) {
         try{
             const query: any = {};
             if (search) {
@@ -202,37 +203,37 @@ class ProductService {
             }
             if (fromPrice) query.price = { $gte: fromPrice };
             if (toPrice) query.price = { $lte: toPrice };
-            if (supplierId) query.supplierId = supplierId;
+            if (kitchenId) query.kitchenId = kitchenId;
 
             const { skip, limit} = pagination({ page, size });
 
-            const products = await this.productDataSource.findWithPopulate(query, this.populatedArray, { skip, limit });
+            const meals = await this.mealDataSource.findWithPopulate(query, this.populatedArray, { skip, limit });
 
-            return products;
+            return meals;
 
         } catch(error) {
             if (error instanceof ApiError) {
                 throw error;
             }
-            throw new ApiError('حدث خطأ أثناء جلب المنتجات', INTERNAL_SERVER_ERROR);
+            throw new ApiError('حدث خطأ أثناء جلب الوجبات', INTERNAL_SERVER_ERROR);
         }
     }
 
-    async updateOne({ query, data }: { query: FilterQuery<IProductModel>, data: Partial<IProductModel>}) {
-        const updatedProduct = await this.productDataSource.updateOne(query, data, this.populatedArray);
-        return updatedProduct;
+    async updateOne({ query, data }: { query: FilterQuery<IMealModel>, data: Partial<IMealModel>}) {
+        const updatedMeal = await this.mealDataSource.updateOne(query, data, this.populatedArray);
+        return updatedMeal;
     }
 
-    async adminAddNoteToProduct({ productSlug, note }: { productSlug: string, note: string }) {
+    async adminAddNoteToMeal({ mealSlug, note }: { mealSlug: string, note: string }) {
         try {
-            const isProductExist = await this.findProductBySlug(productSlug);
-            if (!isProductExist) {
-                throw new ApiError('المنتج غير موجود', NOT_FOUND);
+            const isMealExist = await this.findMealBySlug(mealSlug);
+            if (!isMealExist) {
+                throw new ApiError('الوجبة غير موجودة', NOT_FOUND);
             }
-            const updatedProduct = await this.productDataSource.updateOne({ slug: productSlug, _id: isProductExist._id }, { adminNotes: note }, this.populatedArray);
+            const updatedMeal = await this.mealDataSource.updateOne({ slug: mealSlug, _id: isMealExist._id }, { adminNotes: note }, this.populatedArray);
             
-            //! Send notification for supplier
-            return updatedProduct;
+            //! Send notification for kitchen
+            return updatedMeal;
         } catch(error) {
             if (error instanceof ApiError) {
                 throw error;
@@ -241,10 +242,10 @@ class ProductService {
         }
     }
 
-    async updateMany({ query, data }: { query: FilterQuery<IProductModel>, data: UpdateQuery<IProductModel> }) {
-        return await this.productDataSource.updateMany(query, data) 
+    async updateMany({ query, data }: { query: FilterQuery<IMealModel>, data: UpdateQuery<IMealModel> }) {
+        return await this.mealDataSource.updateMany(query, data) 
     }
 
 }
 
-export const productService = new ProductService();
+export const mealService = new MealService();

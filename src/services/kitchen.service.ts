@@ -7,7 +7,9 @@ import { ApiError, BAD_REQUEST, CONFLICT, INTERNAL_SERVER_ERROR, NOT_FOUND } fro
 import { authService } from "./auth.service";
 import { cloudinaryService } from "./cloudinary.service";
 import { HashingService } from "./hashing.service";
+import { mealService } from "./meal.service";
 import { requestService } from "./request.service";
+import { surplusService } from "./surplus.service";
 import { userService } from "./user.service";
 
 class KitchenService {
@@ -308,11 +310,17 @@ class KitchenService {
             }
         }
 
-         //! Updated All Meals isActive
-        // const updatedSupplierProducts = await mealService.updateMany({
-        //     query: { kitchenId },
-        //     data: { isActive: true }
-        // })
+        // ! Updated All Meals isActive
+        const updatedSupplierProducts = await mealService.updateMany({
+            query: { kitchenId },
+            data: { isActive: true }
+        })
+
+         //! Updated All Surpluses isActive
+         const updatedKitchenSurpluses = await surplusService.updateMany({
+            query: { userId: kitchenId },
+            data: { isActive: true }
+        })
         
         return updatedKitchen;
     }

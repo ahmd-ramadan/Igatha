@@ -1,6 +1,7 @@
 import { ApiError, generateUniqueString, INTERNAL_SERVER_ERROR } from '../utils';
 import { productService } from './product.service';
 
+type slugTotypes = 'product' | 'meal'
 export class SlugifyService {
 
     private readonly slugOptions = {
@@ -10,7 +11,7 @@ export class SlugifyService {
         locale: 'en'
     }
 
-    async generateSlug(text: string, to: 'product') {
+    async generateSlug(text: string, to: slugTotypes) {
         try {
             // let newSlug = slug(text, this.slugOptions);
             let newSlug = text.trim().split(' ').join('-');

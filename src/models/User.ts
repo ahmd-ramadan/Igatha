@@ -1,7 +1,6 @@
 import { Schema, model } from 'mongoose';
 import { UserRolesEnum, UserStatusEnum } from '../enums';
 import { IUserModel } from '../interfaces';
-import { HashingService } from '../services';
 
 const userSchema = new Schema({
     name: {
@@ -28,7 +27,7 @@ const userSchema = new Schema({
     },
     isVerified: {
         type: Boolean,
-        default: false,
+        default: true,
     },
     status: {
         type: String,

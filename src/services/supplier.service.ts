@@ -9,6 +9,7 @@ import { cloudinaryService } from "./cloudinary.service";
 import { HashingService } from "./hashing.service";
 import { productService } from "./product.service";
 import { requestService } from "./request.service";
+import { surplusService } from "./surplus.service";
 import { userService } from "./user.service";
 
 class SupplierService {
@@ -313,6 +314,12 @@ class SupplierService {
         //! Updated All Product isActive
         const updatedSupplierProducts = await productService.updateMany({
             query: { supplierId },
+            data: { isActive: true }
+        })
+
+        //! Updated All Surpluses isActive
+        const updatedSupplierSurpluses = await surplusService.updateMany({
+            query: { userId: supplierId },
             data: { isActive: true }
         })
         
