@@ -304,7 +304,7 @@ class MealOrderService {
     async getAllOrders({ kitchenId, campaignId, page, size }: { kitchenId?: string, campaignId?: string, page: number, size: number }) {
         try {
             let query: FilterQuery<IMealOrder> = {};
-            if(kitchenId) query.kitcehnId = kitchenId;
+            if(kitchenId) query.kitchenId = kitchenId;
             if(campaignId) query.campaignId = campaignId;
 
             const { limit, skip } = pagination({ page, size });
